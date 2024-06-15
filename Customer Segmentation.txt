@@ -1,0 +1,46 @@
+Customer Segmentation
+
+Objective: Given a dataset of customer transactions, use Spark to segment customers based on their purchasing behavior.
+
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import avg
+
+# Set up Spark session
+spark = SparkSession.builder.appName("CustomerSegmentation").getOrCreate()
+
+# Load the transactions data
+transactions = spark.read.csv("transactions.csv", header=True, inferSchema=True)
+
+# Calculate total and average amount spent by each customer
+customer_spending = transactions.groupBy("customerId")\
+    .agg({"amount": "sum", "amount": "avg"})\
+    .withColumnRenamed("sum(amount)", "total_spent")\
+    .withColumnRenamed("avg(amount)", "avg_spent")
+
+# Show the results
+customer_spending.show()
+
+# Segmentation: For simplicity, let's segment customers into 'High', 'Medium', and 'Low' spenders
+def segment_customer(avg_spent):
+    if avg_spent >= 50:
+        return "High"
+    elif avg_spent >= 20:
+        return "Medium"
+    else:
+        return "Low"
+
+# Register UDF
+from pyspark.sql.functions import udf
+from pyspark.sql.types import StringType
+
+segment_customer_udf = udf(segment_customer, StringType())
+
+# Apply segmentation
+segmented_customers = customer_spending.withColumn("segment", segment_customer_udf(customer_spending["avg_spent"]))
+
+# Show the segmented customers
+segmented_customers.show()
+
+# Stop the Spark session
+spark.stop()

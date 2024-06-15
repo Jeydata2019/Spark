@@ -1,0 +1,19 @@
+Analyze it to find the average rating for each movie.
+
+
+from pyspark.sql import SparkSession
+
+# Set up Spark session
+spark = SparkSession.builder.appName("MovieRatingsAnalysis").getOrCreate()
+
+# Load the ratings data
+ratings = spark.read.csv("ratings.csv", header=True, inferSchema=True)
+
+# Calculate average rating for each movie
+average_ratings = ratings.groupBy("movieId").avg("rating")
+
+# Show the results
+average_ratings.show()
+
+# Stop the Spark session
+spark.stop()

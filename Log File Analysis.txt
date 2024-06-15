@@ -1,0 +1,35 @@
+
+Objective: Given a web server log file, calculate the number of hits per URL.
+
+
+from pyspark import SparkContext, SparkConf
+import re
+
+# Set up Spark configuration and context
+conf = SparkConf().setAppName("LogFileAnalysis").setMaster("local")
+sc = SparkContext(conf=conf)
+
+# Regular expression to extract the URL from the log line
+log_pattern = re.compile(r'GET\s+(\S+)\s+HTTP/1.1')
+
+# Function to extract URL
+def extract_url(line):
+    match = log_pattern.search(line)
+    if match:
+        return match.group(1)
+    return None
+
+# Load the log file
+log_file = sc.textFile("web_log.txt")
+
+# Extract URLs and count hits
+urls = log_file.map(extract_url).filter(lambda url: url is not None)
+url_pairs = urls.map(lambda url: (url, 1))
+url_counts = url_pairs.reduceByKey(lambda a, b: a + b)
+
+# Collect and print the results
+for url, count in url_counts.collect():
+    print(f"{url}: {count}")
+
+# Stop the Spark context
+sc.stop()

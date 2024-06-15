@@ -1,0 +1,23 @@
+Objective: Use Spark to count the frequency of each word in a given text file.
+
+
+from pyspark import SparkContext, SparkConf
+
+# Set up Spark configuration and context
+conf = SparkConf().setAppName("WordCountExample").setMaster("local")
+sc = SparkContext(conf=conf)
+
+# Load the text file
+text_file = sc.textFile("example_text.txt")
+
+# Perform word count
+words = text_file.flatMap(lambda line: line.split())
+word_pairs = words.map(lambda word: (word, 1))
+word_counts = word_pairs.reduceByKey(lambda a, b: a + b)
+
+# Collect and print the results
+for word, count in word_counts.collect():
+    print(f"{word}: {count}")
+
+# Stop the Spark context
+sc.stop()
